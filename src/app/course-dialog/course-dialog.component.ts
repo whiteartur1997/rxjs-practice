@@ -1,10 +1,9 @@
-import {AfterViewInit, Component, ElementRef, Inject, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
-import {Course} from "../model/course";
-import {FormBuilder, Validators, FormGroup} from "@angular/forms";
+import {AfterViewInit, Component, ElementRef, Inject, OnInit, ViewChild} from '@angular/core';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {Course} from '../model/course';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import * as moment from 'moment';
-import {fromEvent} from 'rxjs';
-import {concatMap, distinctUntilChanged, exhaustMap, filter, mergeMap} from 'rxjs/operators';
+import {concatMap, filter} from 'rxjs/operators';
 import {fromPromise} from 'rxjs/internal-compatibility';
 
 @Component({
@@ -39,11 +38,28 @@ export class CourseDialogComponent implements OnInit, AfterViewInit {
 
     ngOnInit() {
 
-
+      this.form.valueChanges
+        .pipe(
+          filter(() => this.form.valid),
+          // concatMap takes values from the observable above, creates new observables, subscribe to them and concatenate them together
+          // it waits for one observable to complete, and than starts another
+          concatMap(changes => {
+            return this.saveCourse(changes);
+          })
+        )
+        .subscribe()
 
     }
 
-
+    saveCourse(changes) {
+      return fromPromise(fetch(`/api/courses/${this.course.id}`, {
+        method: "PUT",
+        body: JSON.stringify(changes),
+        headers: {
+          'content-type': 'application/json'
+        }
+      }))
+    }
 
     ngAfterViewInit() {
 
